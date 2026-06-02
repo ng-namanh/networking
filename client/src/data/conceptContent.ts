@@ -446,9 +446,9 @@ export const conceptContent: Record<string, ConceptContent> = {
 	},
 	"review-path": {
 		beginner:
-			"Connects all individual concepts—from physical cables to DNS resolution and load balancers—into a single end-to-end data transmission journey.",
+			"The review path connects the core learning model into a real request: resolve a name, route packets, connect with TCP, secure with TLS, send HTTPS, and reach a backend.",
 		developer:
-			"When debugging, isolate the failing layer instead of treating the request as one opaque operation.",
+			"When debugging, isolate the failing layer instead of treating the request as one opaque operation. Advanced protocols such as WebSocket, GraphQL, and gRPC still depend on the same lower-layer path.",
 		terminal: [
 			"dig example.com",
 			"ip route get $(dig +short example.com | head -1)",
@@ -457,6 +457,73 @@ export const conceptContent: Record<string, ConceptContent> = {
 		tips: [
 			"Test in order: DNS, route, port, TLS, HTTP, application.",
 			"Changing one layer can make another layer look broken.",
+		],
+	},
+	websocket: {
+		beginner:
+			"WebSocket upgrades an HTTP connection into a persistent, full-duplex channel. After the handshake, both the client and server can send messages at any time without re-establishing a connection.",
+		developer:
+			"WebSocket starts as an HTTP request with Upgrade: websocket, then switches protocols. It is ideal for chat, live feeds, multiplayer, and dashboards where polling would waste bandwidth and add latency.",
+		terminal: [
+			"curl -v -H 'Upgrade: websocket' -H 'Connection: Upgrade' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' http://localhost:8080/ws",
+			"websocat ws://localhost:8080/ws",
+			"tcpdump -n -i lo 'tcp port 8080'",
+		],
+		tips: [
+			"WebSocket uses one TCP connection for both directions after the handshake.",
+			"Proxies and load balancers must support WebSocket upgrade or the connection will fail.",
+			"Add ping/pong frames or application-level heartbeats to detect dead connections.",
+		],
+	},
+	graphql: {
+		beginner:
+			"GraphQL is a query language for APIs. The client sends a query describing exactly which fields it needs, and the server returns a JSON response matching that shape. Most APIs expose one GraphQL endpoint for queries and mutations.",
+		developer:
+			"GraphQL commonly replaces multiple REST endpoints with one /graphql endpoint, usually called with POST. Some servers also allow GET for read-only queries. The schema defines types, queries, mutations, and subscriptions.",
+		terminal: [
+			'curl -X POST http://localhost:4000/graphql -H "Content-Type: application/json" -d \'{"query":"{ user(id: 1) { name email } }"}\'',
+			"curl http://localhost:4000/graphql -H 'Content-Type: application/json' -d '{\"query\": \"{ __schema { types { name } } }\"}'",
+			"curl -I http://localhost:4000/graphql",
+		],
+		tips: [
+			"GraphQL commonly uses one endpoint; the query body selects the data, not a resource-shaped URL.",
+			"Over-fetching is solved by the client requesting only needed fields.",
+			"N+1 resolver calls are a common performance pitfall; use DataLoader or batching.",
+			"Introspection is useful in development but often disabled in production.",
+		],
+	},
+	grpc: {
+		beginner:
+			"gRPC lets programs call functions on remote servers as if they were local. It uses a contract file (.proto) to define the service, sends data as compact binary Protobuf messages, and runs over HTTP/2 for speed and streaming.",
+		developer:
+			"gRPC is common in microservices because Protobuf is smaller than JSON, HTTP/2 supports multiplexing and streaming, and generated client/server code keeps contracts in sync. It supports unary, server-streaming, client-streaming, and bidirectional RPCs.",
+		terminal: [
+			"grpcurl -plaintext localhost:50051 list",
+			'grpcurl -plaintext -d \'{"name": "world"}\' localhost:50051 hello.Greeter/SayHello',
+			"protoc --go_out=. --go-grpc_out=. greeter.proto",
+		],
+		tips: [
+			"gRPC uses HTTP/2, so it is not directly browsable like REST without tools like grpcurl.",
+			"Protobuf is binary; you cannot read it with curl or a text editor.",
+			"Use gRPC-Web or a REST gateway when browser clients need to call gRPC services.",
+			"Status codes and errors are in HTTP/2 trailers, not the response body.",
+		],
+	},
+	mtls: {
+		beginner:
+			"Mutual TLS (mTLS) is like TLS but both sides prove their identity. The server sends its certificate as usual, and the client also sends its own certificate. Both are verified against a trusted certificate authority before any data flows.",
+		developer:
+			"mTLS is standard for service-to-service authentication in zero-trust architectures, Kubernetes service meshes like Istio and Linkerd, and internal APIs. The client certificate is verified by the server, and the server certificate is verified by the client, eliminating anonymous endpoints.",
+		terminal: [
+			"openssl s_client -connect service.local:443 -cert client.pem -key client-key.pem -CAfile ca.pem",
+			"openssl x509 -in client.pem -text -noout",
+			"curl --cert client.pem --key client-key.pem --cacert ca.pem https://service.local",
+		],
+		tips: [
+			"mTLS requires a CA that both sides trust; self-signed certs need explicit trust configuration.",
+			"Rotate client and server certificates before expiry to avoid outages.",
+			"mTLS authenticates the connection, not the user; pair it with application-level auth if needed.",
+			"Service meshes can handle mTLS transparently so application code does not need certificates.",
 		],
 	},
 };

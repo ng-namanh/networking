@@ -326,6 +326,22 @@ export const concepts: Concept[] = [
 	},
 	{
 		order: 23,
+		id: "mtls",
+		slug: "mtls",
+		title: "mTLS",
+		summary:
+			"Show both client and server exchanging and verifying certificates to establish a mutually authenticated encrypted connection.",
+		layer: "Security Layer",
+		osiLayer: "Layer 5 & 6 (Session / Presentation)",
+		osiExplanation:
+			"Extends TLS session establishment by requiring both peers to present and verify certificates before encrypted application data flows.",
+		whyNeed:
+			"Authenticates services to each other so internal APIs and service meshes do not trust anonymous clients.",
+		limitation:
+			"Requires certificate issuance, trust management, rotation, and careful expiry monitoring.",
+	},
+	{
+		order: 24,
 		id: "vpn",
 		slug: "vpn",
 		title: "VPN",
@@ -340,7 +356,7 @@ export const concepts: Concept[] = [
 			"Adds routing overhead and latency, and requires a trusted VPN provider.",
 	},
 	{
-		order: 24,
+		order: 25,
 		id: "dns",
 		slug: "dns",
 		title: "DNS",
@@ -355,7 +371,7 @@ export const concepts: Concept[] = [
 			"If DNS resolution fails or is slow, websites become unreachable even if the physical internet connection is working.",
 	},
 	{
-		order: 25,
+		order: 26,
 		id: "http",
 		slug: "http",
 		title: "HTTP",
@@ -369,7 +385,7 @@ export const concepts: Concept[] = [
 			"Transfers data in plain text, meaning anyone in the middle can read passwords and cookies.",
 	},
 	{
-		order: 26,
+		order: 27,
 		id: "https",
 		slug: "https",
 		title: "HTTPS",
@@ -383,7 +399,55 @@ export const concepts: Concept[] = [
 			"Relies on certificate authorities; invalid or expired certificates will trigger blocking browser security warnings.",
 	},
 	{
-		order: 27,
+		order: 28,
+		id: "websocket",
+		slug: "websocket",
+		title: "WebSocket",
+		summary:
+			"Show a persistent, full-duplex connection between client and server after an HTTP upgrade handshake.",
+		layer: "Application Layer",
+		osiLayer: "Layer 7 (Application)",
+		osiExplanation:
+			"Starts with an HTTP upgrade request, then runs a full-duplex application messaging protocol over one persistent transport connection.",
+		whyNeed:
+			"Enables real-time messages such as chat, dashboards, games, and notifications without repeated polling requests.",
+		limitation:
+			"Long-lived connections require proxy support, heartbeat handling, scaling strategy, and connection cleanup.",
+	},
+	{
+		order: 29,
+		id: "graphql",
+		slug: "graphql",
+		title: "GraphQL",
+		summary:
+			"Show a client sending a structured query to an API endpoint and receiving exactly the fields it requested.",
+		layer: "Application Layer",
+		osiLayer: "Layer 7 (Application)",
+		osiExplanation:
+			"Defines an application API contract where queries, mutations, and subscriptions are validated against a schema and returned as structured data.",
+		whyNeed:
+			"Lets clients request the exact data shape they need through a consistent API contract.",
+		limitation:
+			"Resolver design can create hidden N+1 queries, expensive nested requests, and caching challenges.",
+	},
+	{
+		order: 30,
+		id: "grpc",
+		slug: "grpc",
+		title: "gRPC",
+		summary:
+			"Show binary Protobuf messages flowing between client and server over HTTP/2 with support for streaming.",
+		layer: "Application Layer",
+		osiLayer: "Layer 7 (Application)",
+		osiExplanation:
+			"Defines remote procedure calls using Protobuf messages over HTTP/2 streams, including unary and streaming communication patterns.",
+		whyNeed:
+			"Provides efficient, strongly typed service-to-service communication for microservices and internal APIs.",
+		limitation:
+			"Binary payloads and HTTP/2 behavior require specialized tooling and browser support usually needs gRPC-Web.",
+	},
+	{
+		order: 31,
 		id: "load-balancer",
 		slug: "load-balancer",
 		title: "Load Balancer",
@@ -398,52 +462,81 @@ export const concepts: Concept[] = [
 			"If the load balancer itself fails, all backend servers become unreachable.",
 	},
 	{
-		order: 28,
+		order: 32,
 		id: "nat",
 		slug: "nat",
 		title: "NAT",
 		summary:
 			"Show private addresses translated to a public address for internet access.",
 		layer: "Network/Transport Boundary",
+		osiLayer: "Layer 3 & 4 (Network / Transport)",
+		osiExplanation:
+			"Rewrites IP addresses and often transport ports so private hosts can share public connectivity or receive forwarded traffic.",
+		whyNeed:
+			"Lets many private devices access external networks through fewer public IP addresses.",
+		limitation:
+			"Can complicate inbound connectivity, peer-to-peer traffic, logging, and troubleshooting.",
 	},
 	{
-		order: 29,
+		order: 33,
 		id: "proxy",
 		slug: "proxy",
 		title: "Proxy",
 		summary:
 			"Show a forward proxy making outbound requests on behalf of a client.",
 		layer: "Application Layer",
+		osiLayer: "Layer 7 (Application)",
+		osiExplanation:
+			"Acts as an application-aware intermediary that receives client requests and makes outbound requests on the client's behalf.",
+		whyNeed:
+			"Adds centralized outbound control, authentication, filtering, logging, or caching for client traffic.",
+		limitation:
+			"Misconfigured proxy settings can break DNS, TLS, authentication, or application connectivity.",
 	},
 	{
-		order: 30,
+		order: 34,
 		id: "reverse-proxy",
 		slug: "reverse-proxy",
 		title: "Reverse Proxy",
 		summary:
 			"Show a public entry point routing HTTP requests to internal backends.",
 		layer: "Application/Edge",
+		osiLayer: "Layer 7 (Application)",
+		osiExplanation:
+			"Terminates or forwards application requests in front of servers, often routing by host, path, headers, or protocol.",
+		whyNeed:
+			"Provides one public entry point for many backend services while handling routing, TLS, and headers.",
+		limitation:
+			"Can hide client details or introduce routing and timeout bugs if headers and upstream rules are wrong.",
 	},
 	{
-		order: 31,
+		order: 35,
 		id: "cdn",
 		slug: "cdn",
 		title: "CDN",
 		summary:
 			"Show edge cache serving users near them and fetching from origin on misses.",
 		layer: "Edge Delivery",
+		osiLayer: "Layer 7 (Application / Edge)",
+		osiExplanation:
+			"Serves application content from distributed edge caches and fetches from the origin when cached content is missing or stale.",
+		whyNeed:
+			"Reduces latency and origin load by serving cacheable content closer to users.",
+		limitation:
+			"Incorrect cache keys or TTLs can serve stale, personalized, or sensitive content to the wrong users.",
 	},
 	{
-		order: 32,
+		order: 36,
 		id: "review-path",
 		slug: "review-path",
 		title: "Review Path",
-		summary: "Connect all concepts into an end-to-end request journey.",
-		osiLayer: "Layers 1–7 (Full Stack)",
+		summary:
+			"Review the core end-to-end request path across DNS, routing, TLS, HTTP, and backend delivery.",
+		osiLayer: "Layers 1-7 (Full Stack)",
 		osiExplanation:
-			"Visualizes an end-to-end client-server interaction, touching every layer of the OSI model from physical cables up to application software.",
+			"Visualizes an end-to-end client-server interaction, touching the OSI model from physical delivery through application software.",
 		whyNeed:
-			"Connects all individual concepts into a unified journey, showing how data encapsulation works from L1 to L7.",
+			"Connects individual concepts into a unified journey so learners can see how each layer contributes to one request.",
 		limitation:
 			"Shows a simplified conceptual model; real-world enterprise traffic involves extra layers of complexity.",
 	},

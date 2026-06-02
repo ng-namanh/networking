@@ -5,12 +5,15 @@ import { dhcpDiagram } from "@/components/diagram/dhcp";
 import { dnsDiagram } from "@/components/diagram/dns";
 import { ethernetDiagram } from "@/components/diagram/ethernet";
 import { firewallDiagram } from "@/components/diagram/firewall";
+import { graphqlDiagram } from "@/components/diagram/graphql";
+import { grpcDiagram } from "@/components/diagram/grpc";
 import { httpDiagram } from "@/components/diagram/http";
 import { httpsDiagram } from "@/components/diagram/https";
 import { icmpDiagram } from "@/components/diagram/icmp";
 import { ipAddressDiagram } from "@/components/diagram/ip_address";
 import { loadBalancerDiagram } from "@/components/diagram/load_balancer";
 import { macAddressDiagram } from "@/components/diagram/mac_address";
+import { mtlsDiagram } from "@/components/diagram/mtls";
 import { natDiagram } from "@/components/diagram/nat";
 import { ospfDiagram } from "@/components/diagram/ospf";
 import { pingDiagram } from "@/components/diagram/ping";
@@ -33,6 +36,7 @@ import type {
 } from "@/components/diagram/types";
 import { udpDiagram } from "@/components/diagram/udp";
 import { vpnDiagram } from "@/components/diagram/vpn";
+import { websocketDiagram } from "@/components/diagram/websocket";
 import { wiFiDiagram } from "@/components/diagram/wi_fi";
 
 export type { DiagramDefinition, DiagramStep };
@@ -70,6 +74,10 @@ export const diagrams: Record<string, DiagramDefinition> = {
 	"reverse-proxy": reverseProxyDiagram,
 	cdn: cdnDiagram,
 	"review-path": reviewPathDiagram,
+	websocket: websocketDiagram,
+	graphql: graphqlDiagram,
+	grpc: grpcDiagram,
+	mtls: mtlsDiagram,
 };
 
 export function getDiagramForConcept(slug: string): DiagramDefinition {
