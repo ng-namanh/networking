@@ -1,8 +1,10 @@
 "use client";
 
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, Clock, Play } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardAction,
@@ -13,14 +15,28 @@ import {
 } from "@/components/ui/card";
 import { Progress, ProgressLabel } from "@/components/ui/progress";
 import { concepts } from "@/data/concepts";
-import { useProgressStore } from "@/store/useProgressStore";
+import {
+	hydrateProgressStore,
+	useProgressStore,
+} from "@/store/useProgressStore";
 
 export default function ConceptsPage() {
-	const { completedConcepts } = useProgressStore();
+	const conceptProgress = useProgressStore((s) => s.conceptProgress);
+	const lastVisitedConceptId = useProgressStore((s) => s.lastVisitedConceptId);
 
-	const completedCount = completedConcepts.length;
+	useEffect(() => {
+		hydrateProgressStore();
+	}, []);
+
+	const readCount = concepts.filter(
+		(concept) => conceptProgress[concept.id]?.isRead,
+	).length;
 	const totalConcepts = concepts.length;
-	const progressPercentage = Math.round((completedCount / totalConcepts) * 100);
+	const progressPercentage = Math.round((readCount / totalConcepts) * 100);
+
+	const lastVisitedConcept = lastVisitedConceptId
+		? concepts.find((c) => c.id === lastVisitedConceptId)
+		: null;
 
 	return (
 		<div className="mx-auto flex max-w-[1400px] flex-col gap-12 px-6 py-12 lg:px-16 lg:py-16">
@@ -43,14 +59,32 @@ export default function ConceptsPage() {
 				<Progress value={progressPercentage} className="relative mt-10">
 					<ProgressLabel>Learning progress</ProgressLabel>
 					<span className="ml-auto text-body-sm text-muted-foreground tabular-nums">
-						{completedCount} / {totalConcepts} ({progressPercentage}%)
+						{readCount} / {totalConcepts} ({progressPercentage}%)
 					</span>
 				</Progress>
+
+				{lastVisitedConcept && (
+					<div className="relative mt-6 flex items-center gap-4">
+						<Button
+							variant="default"
+							render={<Link href={`/concepts/${lastVisitedConcept.slug}`} />}
+							nativeButton={false}
+						>
+							<Play data-icon="inline-start" />
+							Continue: {lastVisitedConcept.title}
+						</Button>
+						<span className="text-body-sm text-muted-foreground">
+							Last visited concept {lastVisitedConcept.order}
+						</span>
+					</div>
+				)}
 			</div>
 
 			<div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
 				{concepts.map((concept) => {
-					const isCompleted = completedConcepts.includes(concept.id);
+					const progress = conceptProgress[concept.id];
+					const isRead = progress?.isRead ?? false;
+					const isInProgress = !isRead && progress?.lastVisitedAt != null;
 
 					return (
 						<Card
@@ -60,16 +94,33 @@ export default function ConceptsPage() {
 							<Link href={`/concepts/${concept.slug}`} className="contents">
 								<CardHeader>
 									<div className="flex flex-col gap-2">
-										<Badge variant="secondary" className="w-fit font-mono">
-											Concept {concept.order}
-										</Badge>
+										<div className="flex items-center gap-2">
+											<Badge variant="secondary" className="w-fit font-mono">
+												Concept {concept.order}
+											</Badge>
+											{isRead && (
+												<Badge variant="default" className="w-fit font-mono">
+													Read
+												</Badge>
+											)}
+											{isInProgress && (
+												<Badge
+													variant="outline"
+													className="w-fit border-ring/30 bg-muted text-muted-foreground font-mono"
+												>
+													In progress
+												</Badge>
+											)}
+										</div>
 										<CardTitle className="text-display-sm">
 											{concept.title}
 										</CardTitle>
 									</div>
 									<CardAction>
-										{isCompleted ? (
+										{isRead ? (
 											<CheckCircle2 className="text-primary" />
+										) : isInProgress ? (
+											<Clock className="text-muted-foreground" />
 										) : (
 											<Circle className="text-muted-foreground/35" />
 										)}

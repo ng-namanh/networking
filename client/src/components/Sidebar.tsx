@@ -5,22 +5,32 @@ import {
 	Building2,
 	CheckCircle2,
 	Circle,
+	Clock,
 	GitBranch,
 	Route,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { concepts } from "@/data/concepts";
 import { cn } from "@/lib/utils";
-import { useProgressStore } from "@/store/useProgressStore";
+import {
+	hydrateProgressStore,
+	useProgressStore,
+} from "@/store/useProgressStore";
 
 export function Sidebar() {
 	const pathname = usePathname();
-	const { completedConcepts, bookmarkedConcepts } = useProgressStore();
+	const conceptProgress = useProgressStore((s) => s.conceptProgress);
+	const bookmarkedConcepts = useProgressStore((s) => s.bookmarkedConcepts);
+
+	useEffect(() => {
+		hydrateProgressStore();
+	}, []);
 
 	return (
 		<aside className="flex h-screen w-72 flex-col border-r bg-sidebar text-sidebar-foreground">
@@ -98,7 +108,9 @@ export function Sidebar() {
 				<ScrollArea className="min-h-0 flex-1">
 					<div className="flex flex-col gap-0.5 pr-2">
 						{concepts.map((concept) => {
-							const isCompleted = completedConcepts.includes(concept.id);
+							const progress = conceptProgress[concept.id];
+							const isRead = progress?.isRead ?? false;
+							const isInProgress = !isRead && progress?.lastVisitedAt != null;
 							const isBookmarked = bookmarkedConcepts.includes(concept.id);
 							const isActive = pathname === `/concepts/${concept.slug}`;
 
@@ -114,8 +126,10 @@ export function Sidebar() {
 									)}
 								>
 									<div className="flex min-w-0 items-center gap-2.5">
-										{isCompleted ? (
+										{isRead ? (
 											<CheckCircle2 className="shrink-0 text-primary" />
+										) : isInProgress ? (
+											<Clock className="shrink-0 text-muted-foreground" />
 										) : (
 											<Circle className="shrink-0 text-muted-foreground/35" />
 										)}

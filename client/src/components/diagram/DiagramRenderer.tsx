@@ -45,7 +45,11 @@ export function DiagramRenderer({
 	onStepChange,
 	slug,
 }: DiagramRendererProps) {
-	const step = steps[currentStep];
+	const safeCurrentStep =
+		steps.length === 0 || !Number.isFinite(currentStep)
+			? 0
+			: Math.min(Math.max(0, Math.floor(currentStep)), steps.length - 1);
+	const step = steps[safeCurrentStep];
 
 	const [, setNodePositions] = useState<
 		Record<string, { x: number; y: number }>
@@ -79,6 +83,12 @@ export function DiagramRenderer({
 			})),
 		);
 	}, [slug, initialNodes, setNodes]);
+
+	useEffect(() => {
+		if (steps.length > 0 && currentStep !== safeCurrentStep) {
+			onStepChange(safeCurrentStep);
+		}
+	}, [currentStep, onStepChange, safeCurrentStep, steps.length]);
 
 	useEffect(() => {
 		setNodes((prevNodes) =>
@@ -181,15 +191,15 @@ export function DiagramRenderer({
 					>
 						<div className="flex items-center justify-between">
 							<Badge variant="secondary" className="font-mono">
-								Step {currentStep + 1} of {steps.length}
+								Step {safeCurrentStep + 1} of {steps.length}
 							</Badge>
 							<span className="text-body-sm font-medium text-foreground">
-								{steps[currentStep].label}
+								{step.label}
 							</span>
 						</div>
 
 						<p className="min-h-[40px] text-body-sm text-muted-foreground">
-							{steps[currentStep].description}
+							{step.description}
 						</p>
 
 						<div className="flex items-center justify-center gap-6 pt-2">
@@ -197,8 +207,8 @@ export function DiagramRenderer({
 								type="button"
 								variant="ghost"
 								size="icon"
-								onClick={() => onStepChange(Math.max(0, currentStep - 1))}
-								disabled={currentStep === 0}
+								onClick={() => onStepChange(Math.max(0, safeCurrentStep - 1))}
+								disabled={safeCurrentStep === 0}
 								className="cursor-pointer hover:bg-muted"
 								title="Previous Step"
 							>
@@ -209,7 +219,7 @@ export function DiagramRenderer({
 								variant="ghost"
 								size="icon"
 								onClick={() => onStepChange(0)}
-								disabled={currentStep === 0}
+								disabled={safeCurrentStep === 0}
 								className="cursor-pointer hover:bg-muted"
 								title="Restart Steps"
 							>
@@ -220,9 +230,9 @@ export function DiagramRenderer({
 								variant="ghost"
 								size="icon"
 								onClick={() =>
-									onStepChange(Math.min(steps.length - 1, currentStep + 1))
+									onStepChange(Math.min(steps.length - 1, safeCurrentStep + 1))
 								}
-								disabled={currentStep === steps.length - 1}
+								disabled={safeCurrentStep === steps.length - 1}
 								className="cursor-pointer hover:bg-muted"
 								title="Next Step"
 							>

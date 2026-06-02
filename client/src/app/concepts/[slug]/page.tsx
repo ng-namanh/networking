@@ -7,12 +7,13 @@ import {
 	BookOpen,
 	CheckCircle2,
 	Code,
+	Eye,
 	Info,
 	Layers,
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import { DiagramRenderer } from "@/components/diagram/DiagramRenderer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,10 @@ import { conceptContent } from "@/data/conceptContent";
 import { concepts } from "@/data/concepts";
 import { getDiagramForConcept } from "@/data/diagrams";
 import { cn } from "@/lib/utils";
-import { useProgressStore } from "@/store/useProgressStore";
+import {
+	hydrateProgressStore,
+	useProgressStore,
+} from "@/store/useProgressStore";
 
 export default function ConceptPage({
 	params,
@@ -38,30 +42,66 @@ export default function ConceptPage({
 	params: Promise<{ slug: string }>;
 }) {
 	const { slug } = use(params);
-	const [currentStep, setCurrentStep] = useState(0);
 	const [viewMode, setViewMode] = useState<"beginner" | "developer">(
 		"beginner",
 	);
 
-	const {
-		completedConcepts,
-		bookmarkedConcepts,
-		toggleCompletion,
-		toggleBookmark,
-	} = useProgressStore();
+	const conceptProgress = useProgressStore((s) => s.conceptProgress);
+	const bookmarkedConcepts = useProgressStore((s) => s.bookmarkedConcepts);
+	const toggleRead = useProgressStore((s) => s.toggleRead);
+	const toggleBookmark = useProgressStore((s) => s.toggleBookmark);
+	const setLastVisited = useProgressStore((s) => s.setLastVisited);
+	const setConceptStep = useProgressStore((s) => s.setConceptStep);
+	const hasHydrated = useProgressStore((s) => s.hasHydrated);
 
 	const concept = concepts.find((c) => c.slug === slug);
+	const diagram = getDiagramForConcept(slug);
+
+	const [currentStep, setCurrentStep] = useState(0);
+	const initializedConceptRef = useRef<string | null>(null);
 
 	useEffect(() => {
-		setCurrentStep(0);
+		hydrateProgressStore();
 	}, []);
+
+	useEffect(() => {
+		if (!concept || !hasHydrated) return;
+		if (initializedConceptRef.current === concept.id) return;
+
+		const savedStep = conceptProgress[concept.id]?.lastStep ?? 0;
+		const maxStep = Math.max(diagram.steps.length - 1, 0);
+		const safeStep = Number.isFinite(savedStep)
+			? Math.min(Math.max(0, Math.floor(savedStep)), maxStep)
+			: 0;
+
+		setCurrentStep(safeStep);
+		setLastVisited(concept.id);
+		initializedConceptRef.current = concept.id;
+	}, [
+		concept,
+		conceptProgress,
+		diagram.steps.length,
+		hasHydrated,
+		setLastVisited,
+	]);
+
+	const handleStepChange = useCallback(
+		(step: number) => {
+			setCurrentStep(step);
+			if (concept) {
+				setConceptStep(concept.id, step);
+			}
+		},
+		[concept, setConceptStep],
+	);
 
 	if (!concept) return notFound();
 
-	const diagram = getDiagramForConcept(slug);
 	const content = conceptContent[slug];
-	const isCompleted = completedConcepts.includes(concept.id);
+	const progress = conceptProgress[concept.id];
+	const isRead = progress?.isRead ?? false;
 	const isBookmarked = bookmarkedConcepts.includes(concept.id);
+	const isInProgress = !isRead && progress?.lastVisitedAt != null;
 
 	const currentIndex = concepts.findIndex((c) => c.id === concept.id);
 	const prevConcept = currentIndex > 0 ? concepts[currentIndex - 1] : null;
@@ -94,6 +134,19 @@ export default function ConceptPage({
 							>
 								{concept.osiLayer}
 							</Badge>
+							{isRead && (
+								<Badge variant="default" className="font-mono">
+									Read
+								</Badge>
+							)}
+							{isInProgress && (
+								<Badge
+									variant="outline"
+									className="border-ring/30 bg-muted text-muted-foreground font-mono"
+								>
+									In progress
+								</Badge>
+							)}
 						</div>
 						<div className="flex flex-col gap-2">
 							<h1 className="text-display-lg text-foreground">
@@ -120,12 +173,21 @@ export default function ConceptPage({
 						</Button>
 						<Button
 							type="button"
-							variant={isCompleted ? "default" : "outline"}
+							variant={isRead ? "default" : "outline"}
 							size="lg"
-							onClick={() => toggleCompletion(concept.id)}
+							onClick={() => toggleRead(concept.id)}
 						>
-							<CheckCircle2 data-icon="inline-start" />
-							{isCompleted ? "Completed" : "Mark complete"}
+							{isRead ? (
+								<>
+									<CheckCircle2 data-icon="inline-start" />
+									Mark unread
+								</>
+							) : (
+								<>
+									<Eye data-icon="inline-start" />
+									Mark as read
+								</>
+							)}
 						</Button>
 					</div>
 				</div>
@@ -157,7 +219,7 @@ export default function ConceptPage({
 						initialEdges={diagram.edges}
 						steps={diagram.steps}
 						currentStep={currentStep}
-						onStepChange={setCurrentStep}
+						onStepChange={handleStepChange}
 						slug={slug}
 					/>
 				</Card>
